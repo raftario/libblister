@@ -15,7 +15,14 @@ extern "C" {
 #define BLISTER_PUBLIC(type) type
 #endif
 
+
+// TODO: Add necessary imports
+
+
 // TODO: Function declarations
+
+void str_tolower(char* str);
+
 
 #ifdef __cplusplus
 }
