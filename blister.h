@@ -18,10 +18,14 @@ extern "C" {
 
 // TODO: Add necessary imports
 
+#include "json/cJSON.h"
 
 // TODO: Function declarations
 
 void str_tolower(char* str);
+int decompress_gz_stream(char* compressed_stream, char* decompressed_stream);
+char* blist_file_to_gz_stream(char* src);
+cJSON* parse_blist_file(char* src);
 
 
 #ifdef __cplusplus
