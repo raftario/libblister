@@ -107,10 +107,10 @@ int blist_file_to_gz_stream(char* filename, char* stream) {
     BLISTER_VERIFY_ALLOC(stream);
 
     // Read file to buffer
-    if (fseek(fp, 0, SEEK_SET) != 0) {
+    if (fseek(fp, 8, SEEK_SET) != 0) {
         return BLISTER_FILE;
     }
-    if (fscanf(fp, "%*8s%s", stream) < 1) {
+    if (fscanf(fp, "%s", stream) < 1) {
         return BLISTER_FILE;
     }
 
