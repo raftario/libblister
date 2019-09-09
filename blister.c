@@ -1,11 +1,13 @@
 // TODO: Add necessary imports
 
-#import <ctype.h>
-#import <stdlib.h>
-#import <string.h>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#import "gzip/zconf.h"
-#import "gzip/zlib.h"
+#include "blister.h"
+#include "gzip/zconf.h"
+#include "gzip/zlib.h"
 
 
 // TODO: Function definitions
@@ -20,16 +22,14 @@ int decompress_gz_stream(char* compressed_stream, char* decompressed_stream) {
     size_t compressed_stream_length = strlen(compressed_stream);
     
     // If the compressed stream is 0 length, the decompressed stream is identical
-    if (compressed_stream_length == 0)) {
+    if (compressed_stream_length == 0) {
         decompressed_stream = compressed_stream;
-        return 0;
+        return BLISTER_OK;
     }
 
     // Initial allocation of decompressed_stream
     decompressed_stream = (char*) malloc(compressed_stream_length);
-    if (decompressed_stream == NULL) {
-        return 1;
-    }
+    BLISTER_VERIFY_ALLOC(decompressed_stream);
 
     // Initialise z_stream
     z_stream stream;
@@ -40,9 +40,9 @@ int decompress_gz_stream(char* compressed_stream, char* decompressed_stream) {
     stream.zfree = Z_NULL;
 
     // Initialize inflation
-    if (inflateInit2(&stream, (16 + MAX_WBITS)) != Z_OK)) {
+    if (inflateInit2(&stream, (16 + MAX_WBITS)) != Z_OK) {
         free(decompressed_stream);
-        return 1;
+        return BLISTER_INFLATION;
     }
 
     // Store lengths for future reallocations
@@ -52,11 +52,11 @@ int decompress_gz_stream(char* compressed_stream, char* decompressed_stream) {
     unsigned char done = 0;
     while (!done) {
         // Reallocate new memory if it runs out
-        if (stream.totak_out >= decompressed_stream_length) {
+        if (stream.total_out >= decompressed_stream_length) {
             char* new_decompressed_stream = (char*) malloc(decompressed_stream_length + increase_length);
             if (new_decompressed_stream == NULL) {
                 free(decompressed_stream);
-                return 1;
+                return BLISTER_ALLOCATION;
             }
             memcpy(new_decompressed_stream, decompressed_stream, decompressed_stream_length);
             decompressed_stream_length += increase_length;
@@ -80,8 +80,39 @@ int decompress_gz_stream(char* compressed_stream, char* decompressed_stream) {
     // Finish inflation
     if (inflateEnd(&stream) != Z_OK) {  
         free(decompressed_stream);
-        return 1;
+        return BLISTER_INFLATION;
     }
 
     return 0;
+}
+
+int blist_file_to_gz_stream(char* filename, char* stream) {
+    FILE* fp = fopen(filename, "r");
+
+    // Check for the magic number
+    char magic[9];
+    if (fscanf(fp, "%8s", magic) < 1) {
+        return BLISTER_MAGIC;
+    }
+    if (strcmp(magic, "Blist.v2") != 0) {
+        return BLISTER_MAGIC;
+    }
+
+    // Check file length and allocate buffer for its contents
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        return BLISTER_FILE;
+    }
+    long int stream_length = ftell(fp) - 8;
+    stream = malloc(stream_length);
+    BLISTER_VERIFY_ALLOC(stream);
+
+    // Read file to buffer
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+        return BLISTER_FILE;
+    }
+    if (fscanf(fp, "%*8s%s", stream) < 1) {
+        return BLISTER_FILE;
+    }
+
+    return BLISTER_OK;
 }

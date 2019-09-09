@@ -15,6 +15,14 @@ extern "C" {
 #define BLISTER_PUBLIC(type) type
 #endif
 
+#define BLISTER_OK 0
+#define BLISTER_ALLOCATION 1
+#define BLISTER_INFLATION 2
+#define BLISTER_MAGIC 3
+#define BLISTER_FILE 3
+
+#define BLISTER_VERIFY_ALLOC(var) if (var == NULL) return BLISTER_ALLOCATION
+
 
 // TODO: Add necessary imports
 
@@ -24,7 +32,7 @@ extern "C" {
 
 void str_tolower(char* str);
 int decompress_gz_stream(char* compressed_stream, char* decompressed_stream);
-char* blist_file_to_gz_stream(char* src);
+int blist_file_to_gz_stream(char* filename, char* stream);
 cJSON* parse_blist_file(char* src);
 
 
